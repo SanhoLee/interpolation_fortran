@@ -4,7 +4,7 @@ PROGRAM INTERPOLATION
   ! parameter declaration
   integer, parameter :: SIZE = 100
   integer :: cnt
-  real, dimension(SIZE) :: x,y
+  double precision, dimension(SIZE) :: x,y
   double precision :: r2_lstsq
   character(100) :: read_file="read_file.txt", write_file="write_file.txt"
   
@@ -46,6 +46,14 @@ subroutine check_num_lines(filename,cnt)
   close(10)
 end subroutine check_num_lines
 
+subroutine fy_val(a,b,xt,fy)
+  implicit none
+  double precision :: a,b, xt
+  double precision :: fy
+  ! if variables initialized, all variable will be 0 although variables is considered.
+  fy=a*xt+b
+end subroutine fy_val
+
 subroutine lst_sq(filename,num_lines,r2)
   implicit none
   ! calculating method of least squre, base on y= ax + b
@@ -53,9 +61,10 @@ subroutine lst_sq(filename,num_lines,r2)
   character(100) :: filename
   double precision :: r2, a, b
   double precision :: sig_x,sig_y,sig_xy,sig_x2
+  double precision :: SSR, SST,fy,y_mean
   integer :: num_lines
   integer :: i
-  real, dimension(num_lines)::x,y
+  double precision, dimension(num_lines)::x,y
 
   !initialize variables
   r2 = 0.0
@@ -65,6 +74,10 @@ subroutine lst_sq(filename,num_lines,r2)
   sig_y = 0.0     
   sig_xy = 0.0
   sig_x2 = 0.0
+  SSR = 0.0
+  SST = 0.0
+  fy = 0.0
+  y_mean = 0.0
 
   !read data from the file
   open(10, file=filename)
@@ -83,13 +96,27 @@ subroutine lst_sq(filename,num_lines,r2)
   ! calculating parameter a and b
   a = (num_lines*sig_xy-sig_x*sig_y)/(num_lines*sig_x2-sig_x**2)
   b = (sig_x2*sig_y-sig_x*sig_xy)/(num_lines*sig_x2-sig_x**2)
-
-  ! calculating r2 
+  y_mean = sum(y) / num_lines
 
   ! check a and b value
-  write(*,90) "a","b","r^2"
-  write(*,100) a, b,r2
-  90 format(3(2x,a7))
-  100 format(2(2x,f7.2),2x,f7.4)
+  write(*,90) "a","b"
+  write(*,100) a, b
+  90 format(2(2x,a7))
+  100 format(2(2x,f7.2))
+  ! check y_mean value
+  write(*,"(a12,1x,f5.2)") "y_mean is : ",y_mean
+
+  ! calculating r2=1-(SSR/SST)
+  do i=1, num_lines
+    call fy_val(a,b,x(i),fy)
+    SSR = SSR + ( y(i) - fy )**2
+    SST = SST + ( y(i) - y_mean )**2
+  enddo
+  r2 = 1 - ( SSR / SST )
+  
+  ! check SSR, SST, r^2 values
+  write(*,"(a10,f10.4)") "SSR : ", SSR
+  write(*,"(a10,f10.4)") "SST : ", SST
+  write(*,"(a10,f10.3)") "r^2 : ", r2
 end subroutine lst_sq
 
