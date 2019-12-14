@@ -4,7 +4,7 @@ PROGRAM INTERPOLATION
   ! parameter declaration
   integer, parameter :: SIZE = 100
   integer :: cnt
-  double precision, dimension(SIZE) :: x,y
+  double precision, dimension(SIZE,SIZE) :: x
   double precision :: r2_lstsq
   character(100) :: read_file="read_file.txt", write_file="write_file.txt"
   
@@ -12,39 +12,44 @@ PROGRAM INTERPOLATION
   cnt = 0
   r2_lstsq = 0.0
   
-
-  !file open
-  open(10, file=read_file)
-  open(20, file=write_file)
-  
-  call check_num_lines(read_file, cnt)
-  call lst_sq(read_file,cnt,r2_lstsq)
+  call check_lines_getarr(read_file,x,cnt)
+  !call lst_sq(read_file,cnt,r2_lstsq)
 END PROGRAM INTERPOLATION
 
-subroutine check_num_lines(filename,cnt)
+subroutine check_lines_getarr(filename,tarray,cnt)
 !read how many lines it has
-!it returns number of lines, final line number == > cnt
+!it returns number of lines,
+!           get array, 
+!           final line number == > cnt  
   implicit none
   character(100) :: filename
-  real :: temp
-  integer :: cnt
+  integer :: cnt,i
+  integer,parameter::SIZE=100
+  double precision, dimension(SIZE,SIZE) :: tarray
   
   !initialize variables
   cnt = 0
-  temp = 0.0
-
+  i = 0
+  !어레이 하나에 다 먼저 요소들을 저장하고
+  !그걸 메인에서 각 계산 서브루틴에 뿌려주면, 각 회귀법? 계산법에 맞게 오차를 계산해서 리턴해주는 방식으로 개량하자.
+  
   !file read
   open(10, file=filename)
 
   ! read line one by one, and count numbers
   do
-    read(10,*,END=990) temp
+    read(10,*,END=990) tarray(cnt+1,1),tarray(cnt+1,2)
     cnt = cnt + 1
   enddo
-
   990 continue
+  
+  ! check read data and print out
+  do i=1,cnt
+    write(*,'(2(1x,f10.3))') tarray(i,1),tarray(i,2)
+  enddo
+  write(*,'(a,i2)') 'number of line : ',cnt
   close(10)
-end subroutine check_num_lines
+end subroutine check_lines_getarr
 
 subroutine fy_val(a,b,xt,fy)
   implicit none
@@ -120,3 +125,5 @@ subroutine lst_sq(filename,num_lines,r2)
   write(*,"(a10,f10.3)") "r^2 : ", r2
 end subroutine lst_sq
 
+
+!subroutine lst_sq_2nd(filename,num_lines,r2)
